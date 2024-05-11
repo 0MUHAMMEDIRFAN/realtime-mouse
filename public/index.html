@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background: #151515;
+            color: #fff;
+            padding: 20px;
+        }
+
+        input {
+            border: 1px solid #fff;
+            border-radius: 20px;
+            height: 30px;
+            padding: 10px;
+        }
+
+        button {
+            height: 30px;
+            padding: 5px;
+            border-radius: 5px;
+            background: #000;
+            border: solid 1px #fff;
+            color: #fff;
+        }
+    </style>
+</head>
+
+<body>
+    <div style="display: flex; width: 100%; height: 100%; justify-content: center; align-items: center;">
+        <form id="userForm">
+            <input type="text" id="nameInput" placeholder="Enter Your name" name="nameInput">
+            <button id="buttonSubmit">Save</button>
+        </form>
+    </div>
+    <div id="container"
+        style="padding: 20px; margin-top: 10px; background: #424242; border-radius: 20px; min-height: 100px;"></div>
+
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        const socket = io()
+        const form = document.querySelector("#userForm")
+        const input = document.querySelector("#nameInput")
+        const button = document.querySelector("#buttonSubmit")
+        const container = document.querySelector("#container")
+        const userId = new Date().toString()
+
+        form.addEventListener("submit", (event) => {
+            event.preventDefault()
+            socket.emit("new-user", input.value)
+            input.value = ""
+        })
+        document.addEventListener("mousemove", (event) => {
+            socket.emit("mousemove", { x: event.clientX, y: event.clientY, user: "" })
+            event.clientX
+            event.clientY
+        })
+        socket.on("new-user", (data) => {
+            const div = document.createElement("div")
+            div.textContent = data
+            container.appendChild(div)
+            console.log(data)
+        })
+        socket.on("connect", () => {
+
+            console.log("user Connected")
+        })
+    </script>
+</body>
+
+</html>
