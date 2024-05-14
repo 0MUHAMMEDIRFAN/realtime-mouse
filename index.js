@@ -4,6 +4,7 @@ const http = require("http")
 const server = http.createServer(app)
 const { Server } = require("socket.io")
 const io = new Server(server)
+let users = {}
 
 app.use(express.static("public"))
 
@@ -12,11 +13,18 @@ app.get("/", (req, res) => {
 })
 
 io.on("connection", (socket) => {
-    socket.on("new-user", (data) => {
-        socket.broadcast.emit("new-user", data)
+    socket.emit("users", users)
+    socket.on("users", (data) => {
+        users = { ...users, ...data }
+        socket.broadcast.emit("users", data)
     })
     socket.on("mousemove", (data) => {
         socket.broadcast.emit("mousemove", data)
+    })
+    socket.on("disconnect", (reason, description) => {
+        delete users[socket.id]
+        io.emit("disconnect-user", socket.id)
+        io.emit("users", users)
     })
 })
 
