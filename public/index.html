@@ -63,16 +63,16 @@
         const userList = {}
         const users = {}
 
-        socket.on("connect", () => {
-            console.log("user Connected")
-        })
-
         form.addEventListener("submit", (event) => {
             event.preventDefault()
             socket.emit("users", { [socket.id]: { name: input.value, color: Math.floor(Math.random() * 16777215).toString(16).padStart(6, '0') } })
             username.innerHTML = input.value
             input.value = ""
         })
+        socket.on("connect", () => {
+            console.log("user Connected")
+        })
+
         document.addEventListener("mousemove", (event) => {
             socket.emit("mousemove", { x: event.clientX, y: event.clientY, userId: socket.id })
         })
@@ -81,6 +81,9 @@
                 const div = document.createElement("h2")
                 div.textContent = data.name
                 container.appendChild(div)
+                users[data.userId] = { ...users[data.userId], name: div }
+                console.log(users)
+
             })
         })
         socket.on("mousemove", (data) => {
@@ -98,7 +101,7 @@
                 newUserNameElement.setAttribute('style', `font-size:12px; background:#${data.color}; color:black; font-weight:600; padding: 2px 5px; border-radius: 5px;`)
                 newUserDetailsDiv.appendChild(newUserNameElement)
 
-                users[data.userId].cursor = newUserDetailsDiv
+                users[data.userId] = { ...users[data.userId], cursor: newUserDetailsDiv }
                 document.body.appendChild(newUserDetailsDiv)
             }
             users[data.userId].cursor.style.top = data.y + "px"
