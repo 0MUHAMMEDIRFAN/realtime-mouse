@@ -15,8 +15,10 @@ app.get("/", (req, res) => {
 io.on("connection", (socket) => {
     socket.emit("users", users)
     socket.on("users", (data) => {
-        users = { ...users, ...data }
+        Object.keys(data).forEach((key) => users[key] = { ...users[key], ...data[key] })
+        // users = { ...users, ...data }
         socket.broadcast.emit("users", data)
+        console.log(users, "\n")
     })
     socket.on("mousemove", (data) => {
         socket.broadcast.emit("mousemove", data)
@@ -24,7 +26,7 @@ io.on("connection", (socket) => {
     socket.on("disconnect", (reason, description) => {
         delete users[socket.id]
         io.emit("disconnect-user", socket.id)
-        io.emit("users", users)
+        socket.emit("users", users)
     })
 })
 

@@ -44,7 +44,7 @@
         style="display: flex; flex-direction: column; gap: 10px; width: 100%; height: 100%; justify-content: center; align-items: center;">
         <h1 id="username">Enter Username</h1>
         <form id="userForm">
-            <input type="text" id="nameInput" placeholder="Enter Your name" name="nameInput">
+            <input type="text" id="nameInput" placeholder="Enter Your name" name="nameInput" required>
             <button id="buttonSubmit">Save</button>
         </form>
     </div>
@@ -65,50 +65,59 @@
 
         form.addEventListener("submit", (event) => {
             event.preventDefault()
-            socket.emit("users", { [socket.id]: { name: input.value, color: Math.floor(Math.random() * 16777215).toString(16).padStart(6, '0') } })
+            socket.emit("users", { [socket.id]: { name: input.value } })
             username.innerHTML = input.value
             input.value = ""
         })
-        socket.on("connect", () => {
-            console.log("user Connected")
-        })
-
         document.addEventListener("mousemove", (event) => {
             socket.emit("mousemove", { x: event.clientX, y: event.clientY, userId: socket.id })
         })
-        socket.on("users", (datas) => {
-            Object.values(datas).map((data) => {
-                const div = document.createElement("h2")
-                div.textContent = data.name
-                container.appendChild(div)
-                users[data.userId] = { ...users[data.userId], name: div }
-                console.log(users)
 
+        document.addEventListener('dblclick', () => console.log(users))
+
+        socket.on("connect", (data) => {
+            socket.emit("users", { [socket.id]: { color: Math.floor(Math.random() * 16777215).toString(16).padStart(6, '0') || "ffffff" } })
+        })
+
+        socket.on("users", (datas) => {
+            Object.keys(datas).map((key) => {
+                const oldUserData = users[key]
+                const newUserData = datas[key]
+                const { name, color } = newUserData
+                const div = oldUserData?.element || document.createElement("h2")
+                div.textContent = name
+                oldUserData?.cursorName ? oldUserData.cursorName.textContent = name : ""
+                container.appendChild(div)
+                users[key] = { ...oldUserData, element: div, name: name, color: color }
             })
         })
         socket.on("mousemove", (data) => {
-            if (!users[data.userId]) {
+            const { color, cursor, name } = users[data.userId]
+            if (cursor) {
+                cursor.style.top = data.y + "px"
+                cursor.style.left = data.x + "px"
+            } else {
                 const newUserDetailsDiv = document.createElement("div")
                 newUserDetailsDiv.setAttribute('style', `position:fixed; display: flex; gap:5px; align-items:center; `)
 
                 const newCursorElement = document.createElement("i")
                 newCursorElement.classList.add("fa-solid", "fa-location-arrow")
-                newCursorElement.setAttribute('style', `font-size: 20px; rotate: -90deg; -webkit-text-stroke: .2px black; color: #${data.color};`)
+                newCursorElement.setAttribute('style', `font-size: 20px; rotate: -90deg; -webkit-text-stroke: .2px black; color: #${color};`)
                 newUserDetailsDiv.appendChild(newCursorElement)
 
                 const newUserNameElement = document.createElement("p")
-                newUserNameElement.textContent = "Hi"
-                newUserNameElement.setAttribute('style', `font-size:12px; background:#${data.color}; color:black; font-weight:600; padding: 2px 5px; border-radius: 5px;`)
+                newUserNameElement.textContent = name || "Unknown"
+                newUserNameElement.setAttribute('style', `font-size:12px; background:#${color}; color:black; font-weight:600; padding: 2px 5px; border-radius: 5px;`)
                 newUserDetailsDiv.appendChild(newUserNameElement)
 
-                users[data.userId] = { ...users[data.userId], cursor: newUserDetailsDiv }
+                users[data.userId] = { ...users[data.userId], cursor: newUserDetailsDiv, cursorName: newUserNameElement }
                 document.body.appendChild(newUserDetailsDiv)
             }
-            users[data.userId].cursor.style.top = data.y + "px"
-            users[data.userId].cursor.style.left = data.x + "px"
         })
         socket.on("disconnect-user", (data) => {
-            users[data].remove()
+            users[data]?.cursor?.remove()
+            users[data]?.element?.remove()
+            delete users[data]
         })
     </script>
 </body>
